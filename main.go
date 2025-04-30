@@ -101,6 +101,22 @@ func main() {
 		}
 
 		if update.Message.ReplyToMessage != nil && update.Message.Sticker != nil {
+			if update.Message.From.ID == update.Message.ReplyToMessage.From.ID {
+				cheater := Credit{UserID: int(update.Message.From.ID), Username: update.Message.From.UserName}
+				db.FirstOrCreate(&cheater, Credit{UserID: int(update.Message.From.ID)})
+
+				db.Model(&cheater).UpdateColumn("credit", gorm.Expr("credit - ?", 3))
+
+				db.First(&cheater, "user_id = ?", update.Message.From.ID)
+
+				msgText := fmt.Sprintf("🚫 Fraud detected! @%s tried to cheat by replying to their own message.\nPenalty: -3 SocialCredit\nCurrent balance: %d",
+					cheater.Username,
+					cheater.Credit)
+				msg := tgbotapi.NewMessage(update.Message.Chat.ID, msgText)
+				bot.Send(msg)
+				continue
+			}
+
 			stickerType := ""
 			for _, positiveSticker := range cfg.App.Stickers.Positive {
 				if update.Message.Sticker.FileUniqueID == positiveSticker {
