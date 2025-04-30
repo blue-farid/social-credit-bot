@@ -31,7 +31,11 @@ type Config struct {
 		Stickers struct {
 			Positive []string `yaml:"positive"`
 			Negative []string `yaml:"negative"`
+			Transfer []string `yaml:"transfer"`
 		} `yaml:"stickers"`
+		Capitalist struct {
+			InitialBalance int `yaml:"initial_balance"`
+		} `yaml:"capitalist"`
 	} `yaml:"app"`
 }
 
@@ -39,6 +43,7 @@ type Credit struct {
 	UserID   int `gorm:"primaryKey"`
 	Username string
 	Credit   int
+	Money    int `gorm:"default:0"`
 }
 
 func loadConfig() (*Config, error) {
@@ -100,6 +105,17 @@ func main() {
 			continue
 		}
 
+		if update.Message.From != nil {
+			user := Credit{UserID: int(update.Message.From.ID), Username: update.Message.From.UserName}
+			result := db.FirstOrCreate(&user, Credit{UserID: int(update.Message.From.ID)})
+			if result.RowsAffected > 0 {
+				db.Model(&user).Update("money", cfg.App.Capitalist.InitialBalance)
+				msgText := fmt.Sprintf("💰 Welcome @%s! You received %d initial money.", user.Username, cfg.App.Capitalist.InitialBalance)
+				msg := tgbotapi.NewMessage(update.Message.Chat.ID, msgText)
+				bot.Send(msg)
+			}
+		}
+
 		if update.Message.ReplyToMessage != nil && update.Message.Sticker != nil {
 			if update.Message.From.ID == update.Message.ReplyToMessage.From.ID {
 				cheater := Credit{UserID: int(update.Message.From.ID), Username: update.Message.From.UserName}
@@ -112,6 +128,51 @@ func main() {
 				msgText := fmt.Sprintf("🚫 Fraud detected! @%s tried to cheat by replying to their own message.\nPenalty: -3 SocialCredit\nCurrent balance: %d",
 					cheater.Username,
 					cheater.Credit)
+				msg := tgbotapi.NewMessage(update.Message.Chat.ID, msgText)
+				bot.Send(msg)
+				continue
+			}
+
+			isTransferSticker := false
+			for _, transferSticker := range cfg.App.Stickers.Transfer {
+				if update.Message.Sticker.FileUniqueID == transferSticker {
+					isTransferSticker = true
+					break
+				}
+			}
+
+			if isTransferSticker {
+				if update.Message.From.ID == update.Message.ReplyToMessage.From.ID {
+					msg := tgbotapi.NewMessage(update.Message.Chat.ID, "❌ You cannot transfer money to yourself!")
+					bot.Send(msg)
+					continue
+				}
+
+				sender := Credit{UserID: int(update.Message.From.ID)}
+				receiver := Credit{UserID: int(update.Message.ReplyToMessage.From.ID)}
+
+				db.First(&sender, "user_id = ?", sender.UserID)
+				db.First(&receiver, "user_id = ?", receiver.UserID)
+
+				if sender.Money <= 0 {
+					msg := tgbotapi.NewMessage(update.Message.Chat.ID, "❌ You don't have any money to transfer!")
+					bot.Send(msg)
+					continue
+				}
+
+				db.Model(&sender).UpdateColumn("money", gorm.Expr("money - ?", 1))
+				db.Model(&receiver).UpdateColumn("money", gorm.Expr("money + ?", 1))
+
+				db.First(&sender, "user_id = ?", sender.UserID)
+				db.First(&receiver, "user_id = ?", receiver.UserID)
+
+				msgText := fmt.Sprintf("💰 Money Transfer:\n@%s sent 1 money to @%s\n\n@%s's balance: %d\n@%s's balance: %d",
+					sender.Username,
+					receiver.Username,
+					sender.Username,
+					sender.Money,
+					receiver.Username,
+					receiver.Money)
 				msg := tgbotapi.NewMessage(update.Message.Chat.ID, msgText)
 				bot.Send(msg)
 				continue
@@ -174,6 +235,29 @@ func main() {
 				var points int
 				rows.Scan(&username, &points)
 				text += fmt.Sprintf("@%s — %d\n", username, points)
+			}
+
+			msg := tgbotapi.NewMessage(update.Message.Chat.ID, text)
+			bot.Send(msg)
+		}
+
+		if update.Message.IsCommand() && update.Message.Command() == "money" {
+			rows, err := db.Model(&Credit{}).
+				Select("username, money").
+				Order("money DESC").
+				Limit(10).
+				Rows()
+			if err != nil {
+				log.Println(err)
+				continue
+			}
+
+			text := "💰 Money Leaderboard:\n"
+			for rows.Next() {
+				var username string
+				var money int
+				rows.Scan(&username, &money)
+				text += fmt.Sprintf("@%s — %d\n", username, money)
 			}
 
 			msg := tgbotapi.NewMessage(update.Message.Chat.ID, text)

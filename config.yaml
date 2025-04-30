@@ -15,3 +15,7 @@ app:
       - "AgADshgAAt5nkFA"  # استیکر مثبت
     negative:
       - "AgADAhoAAjTMkVA"  # استیکر منفی
+    transfer:
+      - "AgADBAADwDZPExaJGFY"  # استیکر انتقال پول
+  capitalist:
+    initial_balance: 100  # موجودی اولیه هر کاربر
