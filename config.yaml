@@ -1,0 +1,17 @@
+app:
+  test: true
+  database:
+    type: mysql  # or sqlite
+    mysql:
+      host: 127.0.0.1
+      port: 3306
+      user: root
+      password: yourPass
+      dbname: social_credit
+    sqlite:
+      path: test.db
+  stickers:
+    positive:
+      - "AgADshgAAt5nkFA"  # استیکر مثبت
+    negative:
+      - "AgADAhoAAjTMkVA"  # استیکر منفی
