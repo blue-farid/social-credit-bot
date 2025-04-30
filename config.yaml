@@ -12,10 +12,10 @@ app:
       path: test.db
   stickers:
     positive:
-      - "AgADshgAAt5nkFA"  # استیکر مثبت
+      - "AgADshgAAt5nkFA"
     negative:
-      - "AgADAhoAAjTMkVA"  # استیکر منفی
+      - "AgADAhoAAjTMkVA"
     transfer:
-      - "AgADBAADwDZPExaJGFY"  # استیکر انتقال پول
+      - "AQAD8RcAAgJ8kFBy"
   capitalist:
-    initial_balance: 100  # موجودی اولیه هر کاربر
+    initial_balance: 20

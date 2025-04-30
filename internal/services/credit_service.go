@@ -51,26 +51,22 @@ func (s *CreditService) GetTopMoney(limit int) ([]models.Credit, error) {
 }
 
 func (s *CreditService) TransferMoney(senderID, receiverID int) error {
-	// Start transaction
 	tx := s.db.Begin()
 	if tx.Error != nil {
 		return tx.Error
 	}
 
-	// Get sender's current balance
 	var sender models.Credit
 	if err := tx.First(&sender, "user_id = ?", senderID).Error; err != nil {
 		tx.Rollback()
 		return err
 	}
 
-	// Check if sender has enough money
 	if sender.Money <= 0 {
 		tx.Rollback()
 		return fmt.Errorf("insufficient balance")
 	}
 
-	// Perform transfer
 	if err := tx.Model(&models.Credit{}).
 		Where("user_id = ?", senderID).
 		UpdateColumn("money", gorm.Expr("money - ?", 1)).Error; err != nil {
@@ -85,6 +81,5 @@ func (s *CreditService) TransferMoney(senderID, receiverID int) error {
 		return err
 	}
 
-	// Commit transaction
 	return tx.Commit().Error
 }

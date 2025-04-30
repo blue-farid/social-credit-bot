@@ -16,13 +16,11 @@ import (
 )
 
 func main() {
-	// Load configuration
 	cfg, err := config.LoadConfig("config.yaml")
 	if err != nil {
 		log.Panic("failed to load config: ", err)
 	}
 
-	// Initialize bot
 	bot, err := tgbotapi.NewBotAPI("7780232983:AAHc_AActaCvmBr40oG_y29JGKZe_aYZrfE")
 	if err != nil {
 		log.Panic(err)
@@ -31,7 +29,6 @@ func main() {
 	bot.Debug = false
 	log.Printf("Authorized on account %s", bot.Self.UserName)
 
-	// Initialize database
 	var db *gorm.DB
 	if cfg.App.Test || cfg.App.Database.Type == "sqlite" {
 		db, err = gorm.Open(sqlite.Open(cfg.App.Database.SQLite.Path), &gorm.Config{})
@@ -53,16 +50,12 @@ func main() {
 		log.Println("Connected to MySQL database")
 	}
 
-	// Auto migrate database
 	db.AutoMigrate(&models.Credit{})
 
-	// Initialize services
 	creditService := services.NewCreditService(db)
 
-	// Initialize handlers
 	messageHandler := handlers.NewMessageHandler(bot, cfg, creditService)
 
-	// Start bot
 	u := tgbotapi.NewUpdate(0)
 	u.Timeout = 60
 	updates := bot.GetUpdatesChan(u)

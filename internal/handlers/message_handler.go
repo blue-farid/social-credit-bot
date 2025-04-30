@@ -7,6 +7,8 @@ import (
 	"social-credit/internal/config"
 	"social-credit/internal/services"
 
+	"slices"
+
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
 
@@ -29,7 +31,6 @@ func (h *MessageHandler) HandleMessage(update tgbotapi.Update) {
 		return
 	}
 
-	// Initialize new user
 	if update.Message.From != nil {
 		err := h.credit.InitializeUser(
 			int(update.Message.From.ID),
@@ -45,20 +46,17 @@ func (h *MessageHandler) HandleMessage(update tgbotapi.Update) {
 		}
 	}
 
-	// Handle sticker replies
 	if update.Message.ReplyToMessage != nil && update.Message.Sticker != nil {
 		h.handleStickerReply(update)
 		return
 	}
 
-	// Handle commands
 	if update.Message.IsCommand() {
 		h.handleCommand(update)
 	}
 }
 
 func (h *MessageHandler) handleStickerReply(update tgbotapi.Update) {
-	// Check for self-reply
 	if update.Message.From.ID == update.Message.ReplyToMessage.From.ID {
 		cheater, err := h.credit.GetUserCredit(int(update.Message.From.ID))
 		if err != nil {
@@ -75,23 +73,16 @@ func (h *MessageHandler) handleStickerReply(update tgbotapi.Update) {
 		return
 	}
 
-	// Check for transfer sticker
 	if h.isTransferSticker(update.Message.Sticker.FileUniqueID) {
 		h.handleMoneyTransfer(update)
 		return
 	}
 
-	// Handle social credit stickers
 	h.handleSocialCredit(update)
 }
 
 func (h *MessageHandler) isTransferSticker(fileUniqueID string) bool {
-	for _, transferSticker := range h.config.App.Stickers.Transfer {
-		if fileUniqueID == transferSticker {
-			return true
-		}
-	}
-	return false
+	return slices.Contains(h.config.App.Stickers.Transfer, fileUniqueID)
 }
 
 func (h *MessageHandler) handleMoneyTransfer(update tgbotapi.Update) {
@@ -146,15 +137,11 @@ func (h *MessageHandler) handleSocialCredit(update tgbotapi.Update) {
 }
 
 func (h *MessageHandler) getStickerType(fileUniqueID string) string {
-	for _, positiveSticker := range h.config.App.Stickers.Positive {
-		if fileUniqueID == positiveSticker {
-			return "positive"
-		}
+	if slices.Contains(h.config.App.Stickers.Positive, fileUniqueID) {
+		return "positive"
 	}
-	for _, negativeSticker := range h.config.App.Stickers.Negative {
-		if fileUniqueID == negativeSticker {
-			return "negative"
-		}
+	if slices.Contains(h.config.App.Stickers.Negative, fileUniqueID) {
+		return "negative"
 	}
 	return ""
 }
