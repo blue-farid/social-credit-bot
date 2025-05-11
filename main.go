@@ -66,9 +66,13 @@ func healthHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
-	http.HandleFunc("/health", healthHandler)
-	fmt.Println("Server started at :8080")
-	http.ListenAndServe(":8080", nil)
+	go func() {
+		http.HandleFunc("/health", healthHandler)
+		fmt.Println("Server started at :8080")
+		if err := http.ListenAndServe(":8080", nil); err != nil {
+			log.Fatalf("failed to start server: %v", err)
+		}
+	}()
 	cfg, err := loadConfig()
 	if err != nil {
 		log.Panic("failed to load config: ", err)
