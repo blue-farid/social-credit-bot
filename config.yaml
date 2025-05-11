@@ -1,4 +1,5 @@
 app:
+  token: ${API_KEY}
   test: true
   database:
     type: mysql  # or sqlite
