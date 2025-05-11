@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"log"
+	"net/http"
 	"os"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
@@ -59,7 +60,15 @@ func loadConfig() (*Config, error) {
 	return &cfg, err
 }
 
+func healthHandler(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusOK)
+	fmt.Fprintln(w, "OK")
+}
+
 func main() {
+	http.HandleFunc("/health", healthHandler)
+	fmt.Println("Server started at :8080")
+	http.ListenAndServe(":8080", nil)
 	cfg, err := loadConfig()
 	if err != nil {
 		log.Panic("failed to load config: ", err)
