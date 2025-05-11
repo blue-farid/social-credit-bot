@@ -66,7 +66,7 @@ func main() {
 		log.Panic("failed to load config: ", err)
 	}
 
-	bot, err := tgbotapi.NewBotAPI()
+	bot, err := tgbotapi.NewBotAPI(cfg.App.Token)
 	if err != nil {
 		log.Panic(err)
 	}
