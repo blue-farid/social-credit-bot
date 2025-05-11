@@ -14,8 +14,8 @@ import (
 
 type Config struct {
 	App struct {
-		Test     bool `yaml:"test"`
-		Token    string `yaml:token`
+		Test     bool   `yaml:"test"`
+		Token    string `yaml:"token"`
 		Database struct {
 			Type  string `yaml:"type"`
 			MySQL struct {
