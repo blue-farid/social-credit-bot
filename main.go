@@ -14,8 +14,7 @@ import (
 
 type Config struct {
 	App struct {
-		Test     bool   `yaml:"test"`
-		Token    string `yaml:"token"`
+		Test     bool `yaml:"test"`
 		Database struct {
 			Type  string `yaml:"type"`
 			MySQL struct {
@@ -65,8 +64,7 @@ func main() {
 	if err != nil {
 		log.Panic("failed to load config: ", err)
 	}
-
-	bot, err := tgbotapi.NewBotAPI(cfg.App.Token)
+	bot, err := tgbotapi.NewBotAPI(os.Getenv("API_KEY"))
 	if err != nil {
 		log.Panic(err)
 	}
