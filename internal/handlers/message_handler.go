@@ -32,10 +32,8 @@ func (h *MessageHandler) HandleMessage(update tgbotapi.Update) {
 	}
 
 	if update.Message.From != nil {
-		// Check if user exists first
 		existingUser, err := h.credit.GetUserCredit(int(update.Message.From.ID))
 		if err != nil {
-			// User doesn't exist, initialize them
 			err := h.credit.InitializeUser(
 				int(update.Message.From.ID),
 				update.Message.From.UserName,
@@ -49,7 +47,6 @@ func (h *MessageHandler) HandleMessage(update tgbotapi.Update) {
 				h.bot.Send(msg)
 			}
 		} else {
-			// Update username if it has changed
 			if existingUser.Username != update.Message.From.UserName {
 				h.credit.UpdateUsername(int(update.Message.From.ID), update.Message.From.UserName)
 			}
