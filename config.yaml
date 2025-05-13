@@ -5,7 +5,7 @@ app:
     type: postgres  # or sqlite
     postgres:
       host: ${DB_HOST}
-      port: ${DB_PORT}
+      port: 5432
       user: ${DB_USER}
       password: ${DB_PASSWORD}
       dbname: ${DB_NAME}
