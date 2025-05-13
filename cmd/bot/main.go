@@ -22,7 +22,6 @@ func main() {
 		log.Panic("failed to load config: ", err)
 	}
 
-	// Initialize health check handler
 	healthHandler := handlers.NewHealthHandler()
 	go func() {
 		log.Printf("Starting health check server on port 8080")

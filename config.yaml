@@ -1,6 +1,6 @@
 app:
   token: ${API_KEY}
-  test: true
+  test: false
   database:
     type: postgres  # or sqlite
     postgres:
