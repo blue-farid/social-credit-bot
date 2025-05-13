@@ -65,19 +65,9 @@ func (h *MessageHandler) HandleMessage(update tgbotapi.Update) {
 
 func (h *MessageHandler) handleStickerReply(update tgbotapi.Update) {
 	if update.Message.From.ID == update.Message.ReplyToMessage.From.ID {
-		cheater, err := h.credit.GetUserCredit(int(update.Message.From.ID))
-		if err != nil {
-			log.Printf("Error getting user credit: %v", err)
+		if h.handleSelfReplyFraud(update) {
 			return
 		}
-
-		h.credit.AddCredit(int(update.Message.From.ID), -3)
-		msgText := fmt.Sprintf("🚫 Fraud detected! @%s tried to cheat by replying to their own message.\nPenalty: -3 SocialCredit\nCurrent balance: %d",
-			cheater.Username,
-			cheater.Credit-3)
-		msg := tgbotapi.NewMessage(update.Message.Chat.ID, msgText)
-		h.bot.Send(msg)
-		return
 	}
 
 	if h.isTransferSticker(update.Message.Sticker.FileUniqueID) {
@@ -86,6 +76,26 @@ func (h *MessageHandler) handleStickerReply(update tgbotapi.Update) {
 	}
 
 	h.handleSocialCredit(update)
+}
+
+func (h *MessageHandler) handleSelfReplyFraud(update tgbotapi.Update) bool {
+	if h.getStickerType(update.Message.Sticker.FileUniqueID) != "positive" {
+		return false
+	}
+
+	cheater, err := h.credit.GetUserCredit(int(update.Message.From.ID))
+	if err != nil {
+		log.Printf("Error getting user credit: %v", err)
+		return false
+	}
+
+	h.credit.AddCredit(int(update.Message.From.ID), -3)
+	msgText := fmt.Sprintf("🚫 Fraud detected! @%s tried to cheat by replying to their own message with a positive sticker.\nPenalty: -3 SocialCredit\nCurrent balance: %d",
+		cheater.Username,
+		cheater.Credit-3)
+	msg := tgbotapi.NewMessage(update.Message.Chat.ID, msgText)
+	h.bot.Send(msg)
+	return true
 }
 
 func (h *MessageHandler) isTransferSticker(fileUniqueID string) bool {
