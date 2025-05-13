@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"log"
+	"net/http"
 
 	"social-credit/internal/config"
 	"social-credit/internal/handlers"
@@ -20,6 +21,15 @@ func main() {
 	if err != nil {
 		log.Panic("failed to load config: ", err)
 	}
+
+	// Initialize health check handler
+	healthHandler := handlers.NewHealthHandler()
+	go func() {
+		log.Printf("Starting health check server on port 8080")
+		if err := http.ListenAndServe(":8080", healthHandler); err != nil {
+			log.Printf("Health check server error: %v", err)
+		}
+	}()
 
 	bot, err := tgbotapi.NewBotAPI(cfg.App.Token)
 	if err != nil {
