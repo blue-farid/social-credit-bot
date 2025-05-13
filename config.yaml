@@ -2,13 +2,13 @@ app:
   token: ${API_KEY}
   test: true
   database:
-    type: mysql  # or sqlite
-    mysql:
-      host: 127.0.0.1
-      port: 3306
-      user: root
-      password: yourPass
-      dbname: social_credit
+    type: postgres  # or sqlite
+    postgres:
+      host: ${DB_HOST}
+      port: ${DB_PORT}
+      user: ${DB_USER}
+      password: ${DB_PASSWORD}
+      dbname: ${DB_NAME}
     sqlite:
       path: test.db
   stickers:

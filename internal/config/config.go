@@ -2,13 +2,15 @@ package config
 
 import (
 	"os"
+	"regexp"
 
 	"gopkg.in/yaml.v3"
 )
 
 type Config struct {
 	App struct {
-		Test     bool `yaml:"test"`
+		Token    string `yaml:"token"`
+		Test     bool   `yaml:"test"`
 		Database struct {
 			Type  string `yaml:"type"`
 			MySQL struct {
@@ -21,6 +23,14 @@ type Config struct {
 			SQLite struct {
 				Path string `yaml:"path"`
 			} `yaml:"sqlite"`
+			Postgres struct {
+				Host     string `yaml:"host"`
+				Port     int    `yaml:"port"`
+				User     string `yaml:"user"`
+				Password string `yaml:"password"`
+				DBName   string `yaml:"dbname"`
+				SSLMode  string `yaml:"sslmode"`
+			} `yaml:"postgres"`
 		} `yaml:"database"`
 		Stickers struct {
 			Positive []string `yaml:"positive"`
@@ -33,6 +43,25 @@ type Config struct {
 	} `yaml:"app"`
 }
 
+func substituteEnvVars(cfg *Config) error {
+	data, err := yaml.Marshal(cfg)
+	if err != nil {
+		return err
+	}
+	re := regexp.MustCompile(`\$\{([A-Za-z0-9_]+)\}`)
+
+	dataStr := re.ReplaceAllStringFunc(string(data), func(s string) string {
+		match := re.FindStringSubmatch(s)
+		if len(match) == 2 {
+			if val := os.Getenv(match[1]); val != "" {
+				return val
+			}
+		}
+		return s
+	})
+	return yaml.Unmarshal([]byte(dataStr), cfg)
+}
+
 func LoadConfig(path string) (*Config, error) {
 	f, err := os.Open(path)
 	if err != nil {
@@ -43,5 +72,11 @@ func LoadConfig(path string) (*Config, error) {
 	var cfg Config
 	decoder := yaml.NewDecoder(f)
 	err = decoder.Decode(&cfg)
-	return &cfg, err
+	if err != nil {
+		return nil, err
+	}
+	if err := substituteEnvVars(&cfg); err != nil {
+		return nil, err
+	}
+	return &cfg, nil
 }

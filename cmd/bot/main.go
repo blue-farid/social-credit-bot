@@ -10,7 +10,7 @@ import (
 	"social-credit/internal/services"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
-	"gorm.io/driver/mysql"
+	"gorm.io/driver/postgres"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 )
@@ -21,7 +21,7 @@ func main() {
 		log.Panic("failed to load config: ", err)
 	}
 
-	bot, err := tgbotapi.NewBotAPI("7780232983:AAHc_AActaCvmBr40oG_y29JGKZe_aYZrfE")
+	bot, err := tgbotapi.NewBotAPI(cfg.App.Token)
 	if err != nil {
 		log.Panic(err)
 	}
@@ -36,18 +36,20 @@ func main() {
 			log.Panic("failed to connect to SQLite database: ", err)
 		}
 		log.Println("Connected to SQLite database in test mode")
-	} else {
-		dsn := fmt.Sprintf("%s:%s@tcp(%s:%d)/%s?charset=utf8mb4&parseTime=True&loc=Local",
-			cfg.App.Database.MySQL.User,
-			cfg.App.Database.MySQL.Password,
-			cfg.App.Database.MySQL.Host,
-			cfg.App.Database.MySQL.Port,
-			cfg.App.Database.MySQL.DBName)
-		db, err = gorm.Open(mysql.Open(dsn), &gorm.Config{})
+	} else if cfg.App.Database.Type == "postgres" {
+		dsn := fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s",
+			cfg.App.Database.Postgres.Host,
+			cfg.App.Database.Postgres.Port,
+			cfg.App.Database.Postgres.User,
+			cfg.App.Database.Postgres.Password,
+			cfg.App.Database.Postgres.DBName)
+		db, err = gorm.Open(postgres.Open(dsn), &gorm.Config{})
 		if err != nil {
-			log.Panic("failed to connect to MySQL database: ", err)
+			log.Panic("failed to connect to PostgreSQL database: ", err)
 		}
-		log.Println("Connected to MySQL database")
+		log.Println("Connected to PostgreSQL database")
+	} else {
+		log.Panic("unsupported database type: ", cfg.App.Database.Type)
 	}
 
 	db.AutoMigrate(&models.Credit{})
