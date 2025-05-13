@@ -83,3 +83,9 @@ func (s *CreditService) TransferMoney(senderID, receiverID int) error {
 
 	return tx.Commit().Error
 }
+
+func (s *CreditService) UpdateUsername(userID int, newUsername string) error {
+	return s.db.Model(&models.Credit{}).
+		Where("user_id = ?", userID).
+		Update("username", newUsername).Error
+}

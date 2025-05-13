@@ -32,17 +32,27 @@ func (h *MessageHandler) HandleMessage(update tgbotapi.Update) {
 	}
 
 	if update.Message.From != nil {
-		err := h.credit.InitializeUser(
-			int(update.Message.From.ID),
-			update.Message.From.UserName,
-			h.config.App.Capitalist.InitialBalance,
-		)
-		if err == nil {
-			msgText := fmt.Sprintf("💰 Welcome @%s! You received %d initial money.",
+		// Check if user exists first
+		existingUser, err := h.credit.GetUserCredit(int(update.Message.From.ID))
+		if err != nil {
+			// User doesn't exist, initialize them
+			err := h.credit.InitializeUser(
+				int(update.Message.From.ID),
 				update.Message.From.UserName,
-				h.config.App.Capitalist.InitialBalance)
-			msg := tgbotapi.NewMessage(update.Message.Chat.ID, msgText)
-			h.bot.Send(msg)
+				h.config.App.Capitalist.InitialBalance,
+			)
+			if err == nil {
+				msgText := fmt.Sprintf("💰 Welcome @%s! You received %d initial money.",
+					update.Message.From.UserName,
+					h.config.App.Capitalist.InitialBalance)
+				msg := tgbotapi.NewMessage(update.Message.Chat.ID, msgText)
+				h.bot.Send(msg)
+			}
+		} else {
+			// Update username if it has changed
+			if existingUser.Username != update.Message.From.UserName {
+				h.credit.UpdateUsername(int(update.Message.From.ID), update.Message.From.UserName)
+			}
 		}
 	}
 
