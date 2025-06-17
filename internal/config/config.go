@@ -8,39 +8,72 @@ import (
 )
 
 type Config struct {
-	App struct {
-		Token    string `yaml:"token"`
-		Test     bool   `yaml:"test"`
-		Database struct {
-			Type  string `yaml:"type"`
-			MySQL struct {
-				Host     string `yaml:"host"`
-				Port     int    `yaml:"port"`
-				User     string `yaml:"user"`
-				Password string `yaml:"password"`
-				DBName   string `yaml:"dbname"`
-			} `yaml:"mysql"`
-			SQLite struct {
-				Path string `yaml:"path"`
-			} `yaml:"sqlite"`
-			Postgres struct {
-				Host     string `yaml:"host"`
-				Port     int    `yaml:"port"`
-				User     string `yaml:"user"`
-				Password string `yaml:"password"`
-				DBName   string `yaml:"dbname"`
-				SSLMode  string `yaml:"sslmode"`
-			} `yaml:"postgres"`
-		} `yaml:"database"`
-		Stickers struct {
-			Positive []string `yaml:"positive"`
-			Negative []string `yaml:"negative"`
-			Transfer []string `yaml:"transfer"`
-		} `yaml:"stickers"`
-		Capitalist struct {
-			InitialBalance int `yaml:"initial_balance"`
-		} `yaml:"capitalist"`
-	} `yaml:"app"`
+	App AppConfig `yaml:"app"`
+}
+
+type AppConfig struct {
+	Token         string              `yaml:"token"`
+	Test          bool                `yaml:"test"`
+	Database      DatabaseConfig      `yaml:"database"`
+	Stickers      StickersConfig      `yaml:"stickers"`
+	Capitalist    CapitalistConfig    `yaml:"capitalist"`
+	ActivityCheck ActivityCheckConfig `yaml:"activity_check"`
+}
+
+type DatabaseConfig struct {
+	Type     string         `yaml:"type"`
+	MySQL    MySQLConfig    `yaml:"mysql"`
+	SQLite   SQLiteConfig   `yaml:"sqlite"`
+	Postgres PostgresConfig `yaml:"postgres"`
+}
+
+type MySQLConfig struct {
+	Host     string `yaml:"host"`
+	Port     int    `yaml:"port"`
+	User     string `yaml:"user"`
+	Password string `yaml:"password"`
+	DBName   string `yaml:"dbname"`
+}
+
+type SQLiteConfig struct {
+	Path string `yaml:"path"`
+}
+
+type PostgresConfig struct {
+	Host     string `yaml:"host"`
+	Port     int    `yaml:"port"`
+	User     string `yaml:"user"`
+	Password string `yaml:"password"`
+	DBName   string `yaml:"dbname"`
+	SSLMode  string `yaml:"sslmode"`
+}
+
+type StickersConfig struct {
+	Positive []string `yaml:"positive"`
+	Negative []string `yaml:"negative"`
+	Transfer []string `yaml:"transfer"`
+}
+
+type CapitalistConfig struct {
+	InitialBalance int `yaml:"initial_balance"`
+}
+
+type ActivityCheckConfig struct {
+	Schedule        string         `yaml:"schedule"`
+	ResponseTimeout int            `yaml:"response_timeout"`
+	MaxRetries      int            `yaml:"max_retries"`
+	RetryInterval   int            `yaml:"retry_interval"`
+	Channels        ChannelsConfig `yaml:"channels"`
+	Rewards         RewardsConfig  `yaml:"rewards"`
+}
+
+type ChannelsConfig struct {
+	Alerts   int64 `yaml:"alerts"`
+	Warnings int64 `yaml:"warnings"`
+}
+
+type RewardsConfig struct {
+	AliveScore int `yaml:"alive_score"`
 }
 
 func substituteEnvVars(cfg *Config) error {

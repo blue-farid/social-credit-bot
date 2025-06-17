@@ -13,20 +13,55 @@ import (
 )
 
 type MessageHandler struct {
-	bot    *tgbotapi.BotAPI
-	config *config.Config
-	credit *services.CreditService
+	bot             *tgbotapi.BotAPI
+	config          *config.Config
+	credit          *services.CreditService
+	activityService *services.ActivityService
 }
 
-func NewMessageHandler(bot *tgbotapi.BotAPI, cfg *config.Config, credit *services.CreditService) *MessageHandler {
+func NewMessageHandler(bot *tgbotapi.BotAPI, cfg *config.Config, credit *services.CreditService, activityService *services.ActivityService) *MessageHandler {
 	return &MessageHandler{
-		bot:    bot,
-		config: cfg,
-		credit: credit,
+		bot:             bot,
+		config:          cfg,
+		credit:          credit,
+		activityService: activityService,
 	}
 }
 
 func (h *MessageHandler) HandleMessage(update tgbotapi.Update) {
+	if update.CallbackQuery != nil {
+		if update.CallbackQuery.Data[:6] == "alive_" {
+			userID := update.CallbackQuery.From.ID
+			username := update.CallbackQuery.From.UserName
+			h.activityService.HandleAliveResponse(userID, username)
+
+			// Get user's credit info to show their alive score
+			userCredit, err := h.credit.GetUserCredit(int(userID))
+			if err != nil {
+				log.Printf("Error getting user credit: %v", err)
+				return
+			}
+
+			// Send response message
+			responseText := fmt.Sprintf("✅ حضور شما ثبت شد!\nامتیاز زنده بودن شما: %d", userCredit.AliveScore)
+			msg := tgbotapi.NewMessage(update.CallbackQuery.Message.Chat.ID, responseText)
+			h.bot.Send(msg)
+
+			// Remove the "loading" state from the button
+			callback := tgbotapi.NewCallback(update.CallbackQuery.ID, "")
+			h.bot.Request(callback)
+
+			// Edit the original message to show it's been answered
+			editMsg := tgbotapi.NewEditMessageText(
+				update.CallbackQuery.Message.Chat.ID,
+				update.CallbackQuery.Message.MessageID,
+				"هی! زنده‌ای هنوز؟ ✅ بله!",
+			)
+			h.bot.Send(editMsg)
+			return
+		}
+	}
+
 	if update.Message == nil {
 		return
 	}
@@ -169,6 +204,8 @@ func (h *MessageHandler) handleCommand(update tgbotapi.Update) {
 		h.handleCreditsCommand(update)
 	case "money":
 		h.handleMoneyCommand(update)
+	case "alive":
+		h.handleAliveCommand(update)
 	}
 }
 
@@ -198,6 +235,22 @@ func (h *MessageHandler) handleMoneyCommand(update tgbotapi.Update) {
 	text := "💰 Money Leaderboard:\n"
 	for _, credit := range credits {
 		text += fmt.Sprintf("@%s — %d\n", credit.Username, credit.Money)
+	}
+
+	msg := tgbotapi.NewMessage(update.Message.Chat.ID, text)
+	h.bot.Send(msg)
+}
+
+func (h *MessageHandler) handleAliveCommand(update tgbotapi.Update) {
+	credits, err := h.credit.GetTopAliveScores(10)
+	if err != nil {
+		log.Printf("Error getting top alive scores: %v", err)
+		return
+	}
+
+	text := "🌟 امتیاز زنده بودن:\n"
+	for _, credit := range credits {
+		text += fmt.Sprintf("@%s — %d\n", credit.Username, credit.AliveScore)
 	}
 
 	msg := tgbotapi.NewMessage(update.Message.Chat.ID, text)

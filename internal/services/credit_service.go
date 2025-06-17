@@ -1,6 +1,7 @@
 package services
 
 import (
+	"context"
 	"fmt"
 
 	"social-credit/internal/models"
@@ -50,6 +51,12 @@ func (s *CreditService) GetTopMoney(limit int) ([]models.Credit, error) {
 	return credits, err
 }
 
+func (s *CreditService) GetTopAliveScores(limit int) ([]models.Credit, error) {
+	var credits []models.Credit
+	err := s.db.Order("alive_score DESC").Limit(limit).Find(&credits).Error
+	return credits, err
+}
+
 func (s *CreditService) TransferMoney(senderID, receiverID int) error {
 	tx := s.db.Begin()
 	if tx.Error != nil {
@@ -88,4 +95,11 @@ func (s *CreditService) UpdateUsername(userID int, newUsername string) error {
 	return s.db.Model(&models.Credit{}).
 		Where("user_id = ?", userID).
 		Update("username", newUsername).Error
+}
+
+func (s *CreditService) AwardPoints(ctx context.Context, userID int64, points int, reason string) error {
+	return s.db.Model(&models.Credit{}).
+		Where("user_id = ?", userID).
+		UpdateColumn("alive_score", gorm.Expr("alive_score + ?", points)).
+		Error
 }

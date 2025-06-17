@@ -61,11 +61,19 @@ func main() {
 		log.Panic("unsupported database type: ", cfg.App.Database.Type)
 	}
 
-	db.AutoMigrate(&models.Credit{})
+	// Auto-migrate all models
+	if err := db.AutoMigrate(&models.Credit{}, &models.ActivityStatus{}, &models.ActivityCheck{}); err != nil {
+		log.Panic("failed to auto-migrate database: ", err)
+	}
 
 	creditService := services.NewCreditService(db)
+	activityService := services.NewActivityService(bot, cfg, db, creditService)
 
-	messageHandler := handlers.NewMessageHandler(bot, cfg, creditService)
+	if err := activityService.Start(); err != nil {
+		log.Printf("Failed to start activity service: %v", err)
+	}
+
+	messageHandler := handlers.NewMessageHandler(bot, cfg, creditService, activityService)
 
 	u := tgbotapi.NewUpdate(0)
 	u.Timeout = 60

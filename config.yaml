@@ -20,3 +20,13 @@ app:
       - "AgAD8RcAAgJ8kFA"
   capitalist:
     initial_balance: 20
+  activity_check:
+    schedule: "0 19 * * *"  # Every day at 19:00
+    response_timeout: 3600  # Time in seconds to wait for response (1 hour)
+    max_retries: 3  # Maximum number of retries before marking as inactive
+    retry_interval: 3600  # Time in seconds between retries (1 hours)
+    channels:
+      alerts: ${CHANNEL_ID}  # Replace with your channel ID
+      warnings: ${CHANNEL_ID} # Replace with your channel ID
+    rewards:
+      alive_score: 1  # Points awarded for responding to activity check
