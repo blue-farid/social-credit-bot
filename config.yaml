@@ -2,7 +2,7 @@ app:
   token: ${API_KEY}
   test: false
   database:
-    type: postgres  # or sqlite
+    type: sqlite  # or sqlite
     postgres:
       host: ${DB_HOST}
       port: 5432
