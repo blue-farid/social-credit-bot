@@ -3,6 +3,7 @@ package config
 import (
 	"os"
 	"regexp"
+	"strconv"
 
 	"gopkg.in/yaml.v3"
 )
@@ -67,9 +68,14 @@ type ActivityCheckConfig struct {
 	Rewards         RewardsConfig  `yaml:"rewards"`
 }
 
+type channelsConfigYAML struct {
+	Alerts   string `yaml:"alerts"`
+	Warnings string `yaml:"warnings"`
+}
+
 type ChannelsConfig struct {
-	Alerts   int64 `yaml:"alerts"`
-	Warnings int64 `yaml:"warnings"`
+	Alerts   int64
+	Warnings int64
 }
 
 type RewardsConfig struct {
@@ -92,7 +98,39 @@ func substituteEnvVars(cfg *Config) error {
 		}
 		return s
 	})
-	return yaml.Unmarshal([]byte(dataStr), cfg)
+
+	// First unmarshal into a temporary config with string channel IDs
+	var tmpCfg struct {
+		App struct {
+			ActivityCheck struct {
+				Channels channelsConfigYAML `yaml:"channels"`
+			} `yaml:"activity_check"`
+		} `yaml:"app"`
+	}
+	if err := yaml.Unmarshal([]byte(dataStr), &tmpCfg); err != nil {
+		return err
+	}
+
+	// Convert channel IDs from string to int64
+	alerts, err := strconv.ParseInt(tmpCfg.App.ActivityCheck.Channels.Alerts, 10, 64)
+	if err != nil {
+		return err
+	}
+	warnings, err := strconv.ParseInt(tmpCfg.App.ActivityCheck.Channels.Warnings, 10, 64)
+	if err != nil {
+		return err
+	}
+
+	// Now unmarshal the full config
+	if err := yaml.Unmarshal([]byte(dataStr), cfg); err != nil {
+		return err
+	}
+
+	// Set the converted channel IDs
+	cfg.App.ActivityCheck.Channels.Alerts = alerts
+	cfg.App.ActivityCheck.Channels.Warnings = warnings
+
+	return nil
 }
 
 func LoadConfig(path string) (*Config, error) {
