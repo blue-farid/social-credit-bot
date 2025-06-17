@@ -82,7 +82,7 @@ func (s *ActivityService) checkUserActivity(user *models.User) {
 
 	sentMsg, err := s.bot.Send(msg)
 	if err != nil {
-		s.sendAlert(fmt.Sprintf("Error sending activity check to user %s: %s", user.Username, err.Error()))
+		// who cares?
 		return
 	}
 
