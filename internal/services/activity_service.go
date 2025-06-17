@@ -20,6 +20,7 @@ type ActivityService struct {
 	scheduler     *gocron.Scheduler
 	db            *gorm.DB
 	creditService *CreditService
+	scheduledJobs map[int64]*gocron.Job
 }
 
 func NewActivityService(bot *tgbotapi.BotAPI, config *config.Config, db *gorm.DB, creditService *CreditService) *ActivityService {
@@ -29,6 +30,7 @@ func NewActivityService(bot *tgbotapi.BotAPI, config *config.Config, db *gorm.DB
 		scheduler:     gocron.NewScheduler(time.UTC),
 		db:            db,
 		creditService: creditService,
+		scheduledJobs: make(map[int64]*gocron.Job),
 	}
 }
 
@@ -72,6 +74,12 @@ func (s *ActivityService) checkUserActivity(user *models.User) {
 		return
 	}
 
+	// Cancel any existing scheduled check for this user
+	if existingJob, exists := s.scheduledJobs[user.ID]; exists {
+		s.scheduler.RemoveByReference(existingJob)
+		delete(s.scheduledJobs, user.ID)
+	}
+
 	msg := tgbotapi.NewMessage(user.ID, "هی! زنده‌ای هنوز؟ لطفاً با دکمه زیر پاسخ بده.")
 	keyboard := tgbotapi.NewInlineKeyboardMarkup(
 		tgbotapi.NewInlineKeyboardRow(
@@ -94,10 +102,10 @@ func (s *ActivityService) checkUserActivity(user *models.User) {
 		s.sendAlert(fmt.Sprintf("Error saving activity status for user %s: %s", user.Username, err.Error()))
 	}
 
-	// Schedule check for response timeout
-	s.scheduler.Every(s.config.App.ActivityCheck.ResponseTimeout).Seconds().Do(func() {
+	job, _ := s.scheduler.Every(s.config.App.ActivityCheck.ResponseTimeout).Seconds().Do(func() {
 		s.checkResponseTimeout(&status)
 	})
+	s.scheduledJobs[user.ID] = job
 }
 
 func (s *ActivityService) checkResponseTimeout(status *models.ActivityStatus) {
@@ -134,6 +142,12 @@ func (s *ActivityService) HandleAliveResponse(userID int64, username string) {
 
 	if !status.IsActive {
 		return
+	}
+
+	// Cancel the scheduled check for this user
+	if job, exists := s.scheduledJobs[userID]; exists {
+		s.scheduler.RemoveByReference(job)
+		delete(s.scheduledJobs, userID)
 	}
 
 	status.LastResponse = time.Now()
