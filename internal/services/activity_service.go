@@ -3,6 +3,7 @@ package services
 import (
 	"context"
 	"fmt"
+	"strconv"
 	"time"
 
 	"github.com/go-co-op/gocron"
@@ -168,16 +169,26 @@ func (s *ActivityService) HandleAliveResponse(userID int64, username string) {
 }
 
 func (s *ActivityService) sendAlert(message string) {
-	msg := tgbotapi.NewMessage(s.config.App.ActivityCheck.Channels.Alerts, message)
-	_, err := s.bot.Send(msg)
+	chatID, err := strconv.ParseInt(s.config.App.ActivityCheck.Channels.Alerts, 10, 64)
+	if err != nil {
+		fmt.Printf("Error parsing alert channel ID: %s\n", err.Error())
+		return
+	}
+	msg := tgbotapi.NewMessage(chatID, message)
+	_, err = s.bot.Send(msg)
 	if err != nil {
 		fmt.Printf("Error sending alert: %s\n", err.Error())
 	}
 }
 
 func (s *ActivityService) sendWarning(message string) {
-	msg := tgbotapi.NewMessage(s.config.App.ActivityCheck.Channels.Warnings, message)
-	_, err := s.bot.Send(msg)
+	chatID, err := strconv.ParseInt(s.config.App.ActivityCheck.Channels.Warnings, 10, 64)
+	if err != nil {
+		fmt.Printf("Error parsing warning channel ID: %s\n", err.Error())
+		return
+	}
+	msg := tgbotapi.NewMessage(chatID, message)
+	_, err = s.bot.Send(msg)
 	if err != nil {
 		fmt.Printf("Error sending warning: %s\n", err.Error())
 	}
