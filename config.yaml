@@ -21,10 +21,10 @@ app:
   capitalist:
     initial_balance: 20
   activity_check:
-    schedule: "0 19 * * *"  # Every day at 19:00
-    response_timeout: 3600  # Time in seconds to wait for response (1 hour)
-    max_retries: 3  # Maximum number of retries before marking as inactive
-    retry_interval: 3600  # Time in seconds between retries (1 hours)
+    schedule: "0 */12 * * *"  # Every 12 hours
+    response_timeout: 43200  # Time in seconds to wait for response (12 hours)
+    max_retries: 4  # Maximum number of retries before marking as inactive
+    retry_interval: 10800  # Time in seconds between retries (3 hours)
     channels:
       alerts: ${CHANNEL_ID}  # Replace with your channel ID
       warnings: ${CHANNEL_ID} # Replace with your channel ID
