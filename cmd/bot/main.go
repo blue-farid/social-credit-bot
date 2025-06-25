@@ -69,9 +69,9 @@ func main() {
 	creditService := services.NewCreditService(db)
 	activityService := services.NewActivityService(bot, cfg, db, creditService)
 
-	if err := activityService.Start(); err != nil {
-		log.Printf("Failed to start activity service: %v", err)
-	}
+	// if err := activityService.Start(); err != nil {
+	// 	log.Printf("Failed to start activity service: %v", err)
+	// }
 
 	messageHandler := handlers.NewMessageHandler(bot, cfg, creditService, activityService)
 
