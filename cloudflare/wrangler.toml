@@ -1,0 +1,12 @@
+name = "social-credit-bot"
+main = "src/index.js"
+compatibility_date = "2026-09-01"
+
+# database_id below is a placeholder that only satisfies local `wrangler dev`.
+# Replace it with the real id printed by:
+#   npx wrangler d1 create social-credit-bot
+# Deploys against the placeholder will fail with "database not found".
+[[d1_databases]]
+binding = "DB"
+database_name = "social-credit-bot"
+database_id = "3138b491-4549-442d-848d-140f3597f3de"

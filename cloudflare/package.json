@@ -1,0 +1,19 @@
+{
+  "name": "social-credit-bot-cloudflare",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "tail": "wrangler tail",
+    "db:migrate": "wrangler d1 migrations apply social-credit-bot --remote",
+    "db:migrate:local": "wrangler d1 migrations apply social-credit-bot --local"
+  },
+  "dependencies": {
+    "drizzle-orm": "^0.45.2"
+  },
+  "devDependencies": {
+    "wrangler": "^4.127.1"
+  }
+}
